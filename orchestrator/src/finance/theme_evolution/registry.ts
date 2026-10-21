@@ -75,6 +75,7 @@ export function validateRegistry(reg: ThemeRegistry): void {
     if (!name || name.length > 30) fail(`题材名不合法:${name || "(空)"}`);
     if (![1, 2, 3].includes(t.level)) fail(`题材「${name}」的 level 只能是 1–3`);
     if (!Array.isArray(t.aliases) || t.aliases.some((a) => typeof a !== "string" || !a.trim() || a.length > 30)) fail(`题材「${name}」的别名不合法`);
+    if (!t.evidence || typeof t.evidence !== "object" || Array.isArray(t.evidence)) fail(`题材「${name}」的证据计数不合法`);
     if (t.parent_id !== null && typeof t.parent_id !== "string") fail(`题材「${name}」的 parent_id 不合法`);
     if (t.parent_id === t.id) fail(`题材「${name}」不能以自己为父节点`);
     for (const key of [name, ...t.aliases]) {
@@ -201,6 +202,7 @@ export function applyManual(reg: ThemeRegistry, action: string, p: ManualPayload
   if (action === "reset_node") {
     if (!t) fail("题材不存在");
     t.manual = false;
+    t.confirmed = false;
     validateRegistry(next);
     return next;
   }

@@ -101,6 +101,12 @@ test("人工层级不被 AI 提案覆盖;未知名称、别名冲突跳过", () 
   const confirmed = applyManual(merged.registry, "confirm_theme", { theme_id: byName("光模块").id });
   const again = mergeProposal(confirmed, { macro_directions: [], relations: [], aliases: { "光模块": ["光通信"] } });
   assert.deepEqual(again.registry.themes.find((t) => t.name === "光模块")!.aliases, ["CPO"]);
+
+  // 恢复自动 = 取消人工和「已确认」,重新成为 AI 可以归并的候选
+  const reset = applyManual(confirmed, "reset_node", { theme_id: byName("光模块").id });
+  const optical = reset.themes.find((t) => t.name === "光模块")!;
+  assert.equal(optical.manual, false);
+  assert.equal(optical.confirmed, false);
 });
 
 test("过期清理:自动节点 45 天没出现就停用,人工节点保留", () => {

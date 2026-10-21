@@ -117,6 +117,7 @@ test("构建:同名 / 别名合组、成员按代码去重、行情与资金流�
   assert.equal(row.theme_id, node.id);
   assert.deepEqual(row.source_tags, ["AI算力", "算力"]);
   assert.equal(row.stats.limit_up, 3, "同一题材取涨停数最多的那份统计");
+  assert.match(row.issues.join(" "), /合并了 2 个来源标签/);
   assert.deepEqual(row.core_stocks.map((s) => s.code), ["300003", "300002", "300001"], "成员按代码去重、按板数排");
   assert.equal(row.core_stocks.find((s) => s.code === "300003")?.roles.includes("回封"), true);
   assert.equal(row.core_stocks.find((s) => s.code === "300001")?.close, 10.5);

@@ -404,7 +404,7 @@ export async function buildThemes(
       contrarian: (analysis?.contrarian ?? []).filter((x) => nameHit(x, names)),
       fund_flow: flow ? { net_today_yi: flow.net, net_pct: flow.pct, board: flow.name } : null,
       briefing_mentions: hits.reduce((n, b) => n + b.mentions, 0),
-      issues: [],
+      issues: group.length > 1 ? [`合并了 ${group.length} 个来源标签,统计取涨停数最多的一份`] : [],
     });
   }
   themes.sort((a, b) => STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage) || b.stats.limit_up - a.stats.limit_up || a.name.localeCompare(b.name));
@@ -427,6 +427,7 @@ export async function buildThemes(
     source_notes: [
       "题材按涨停原因串归组;涨停原因是源站编辑归因,不是公司确认。",
       "阶段由确定性规则按涨停数 / 首板 / 最高板 / 炸板率 / 延续率 / 简报提及判定,不是预测。",
+      "同名 / 别名题材合并时,统计取涨停数最多的一份;核心个股取成员并集(源站每个题材最多给 8 只成员)。",
       "财报与行情数据来源见 cn_shortline_themes;行业资金流只给当天。",
     ],
   };
