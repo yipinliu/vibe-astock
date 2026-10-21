@@ -21,6 +21,7 @@ from sources.shortline_boards import render_board_ladder, render_theme_rotation 
 from sources.shortline_emotion import render_cycle, render_daily, render_metrics, render_settled  # noqa: E402
 from sources.shortline_facts import render_facts  # noqa: E402
 from sources.shortline_live import render_live  # noqa: E402
+from sources.shortline_limit_down import render_limit_down  # noqa: E402
 from sources.shortline_structure import POOLS, render_structure  # noqa: E402
 from sources.shortline_themes import render_firstboard, render_themes  # noqa: E402
 from sources.shortline_watch import render_bigcaps, render_ladder, render_turnover_top  # noqa: E402
@@ -586,3 +587,63 @@ def shortline_theme_rotation_map(result: dict, ctx: dict) -> dict:
              "computation": _computation("shortline_boards.build_theme_rotation", {"date": day, "days": result.get("days")},
                                          "每天的东财涨停池 + 问财(配了 IWENCAI_API_KEY)或同花顺涨停揭秘的涨停原因")}
     return a.finish(bool(result.get("settled")), extra, "题材轮动没算出来")
+
+
+# ---------------------------------------------------------------- 跌停深化
+def shortline_limit_down_map(result: dict, ctx: dict) -> dict:
+    """天地面 / 跌停趋势 / 高位龙头跌停 / 换手偏高线索 / 风险等级。"""
+    if not result:
+        return empty("跌停深化计算为空")
+    day = result["date"]
+    a = _Acc(ctx, day)
+    if a.block("limit_down", result):
+        t5, t20 = result.get("trend_5d"), result.get("trend_20d")
+        a.num("dt_count", result.get("dt_count"), "只", note="当日东财跌停池只数")
+        if t5:
+            a.num("dt_5d_avg", t5["avg"], "只", note="前 5 个交易日东财跌停池家数均值；缺一天就不算")
+            a.num("dt_delta_5d", t5["delta"], "只", note="当日跌停家数 − 5 日均值")
+            a.num("dt_ratio_5d", t5["ratio"], "小数", note="当日跌停家数 ÷ 5 日均值")
+        else:
+            a.missing.append({"field": "dt_5d_avg", "period": day, "reason": "前 5 个交易日跌停池缺数，均值不算"})
+        if t20:
+            a.num("dt_20d_avg", t20["avg"], "只", note="前 20 个交易日东财跌停池家数均值；缺一天就不算")
+            a.num("dt_delta_20d", t20["delta"], "只", note="当日跌停家数 − 20 日均值")
+        else:
+            a.missing.append({"field": "dt_20d_avg", "period": day, "reason": "前 20 个交易日跌停池缺数，均值不算"})
+        a.num("history_days_used", result.get("history_days_used"), "天")
+        a.num("history_days_expected", result.get("history_days_expected"), "天")
+        a.text("risk_level", result.get("risk_level"), note="由天地面 / 高位龙头跌停 / 跌停家数及趋势的确定性规则推出；未知不默认绿灯")
+        a.num("risk_score", result.get("risk_score"), "分", note="风险计分，规则见 extra.result.risk_reasons")
+        for reason in result.get("risk_reasons") or []:
+            a.text("risk_reason", reason)
+        a.num("sky_to_ground_count", result.get("sky_to_ground_count"), "只", note="前一交易日涨停池里今天跌停的只数")
+        for x in result.get("sky_to_ground") or []:
+            k = x["code"]
+            n = f"{x['name']}｜昨 {x['prev_label']}｜今日 {x['ret']}%｜换手 {x['turnover']}%"
+            a.num("sky_to_ground_prev_boards", x.get("prev_boards"), "板", key=k, note=n)
+            a.num("sky_to_ground_ret", x.get("ret"), "%", key=k, note=n)
+            a.num("sky_to_ground_turnover", x.get("turnover"), "%", key=k, note=n)
+            a.num("sky_to_ground_consec_dt", x.get("consec_dt"), "天", key=k, note=n)
+        a.num("leader_limit_down_count", result.get("leader_dt_count"), "只", note="前一交易日连板高度 ≥3、今天跌停的只数")
+        for x in result.get("leader_dt") or []:
+            k = x["code"]
+            n = f"{x['name']}｜{x['label']}｜今日 {x['ret']}%"
+            a.num("leader_limit_down_boards", x.get("boards"), "板", key=k, note=n)
+            a.num("leader_limit_down_ret", x.get("ret"), "%", key=k, note=n)
+        a.num("pry_open_count", result.get("pry_open_count"), "只", note="当日跌停池换手率 ≥10% 的只数；只是线索，不是确认翘板")
+        for x in result.get("pry_open_candidates") or []:
+            k = x["code"]
+            n = f"{x['name']}｜换手 {x['turnover']}%｜今日 {x['ret']}%"
+            a.num("pry_open_turnover", x.get("turnover"), "%", key=k, note=n)
+            a.num("pry_open_ret", x.get("ret"), "%", key=k, note=n)
+        for m in result.get("history_missing_days") or []:
+            a.missing.append({"field": "dt_history", "period": m.get("date") or day, "reason": m.get("reason") or "跌停池没取到"})
+        for m in result.get("missing") or []:
+            if m.get("field") in {"prev_zt", "history"}:
+                a.missing.append({"field": m.get("field"), "period": m.get("date") or day, "reason": m.get("reason") or "没取到"})
+    extra = {"date": day, "prev_date": result.get("prev_date"), "settled": result.get("settled"),
+             "text": render_limit_down(result), "result": result,
+             "computation": _computation("shortline_limit_down.build_limit_down",
+                                         {"date": day, "days": result.get("history_days_expected")},
+                                         "跌停池明细取东财;5/20 日均值逐日取跌停池;缺失日不当 0")}
+    return a.finish(bool(result.get("settled")), extra, "跌停深化没算出来")

@@ -3999,6 +3999,32 @@
       "notes": "计算型端点:取数层确定性计算(非 calc DAG);信封结构同 cn_shortline_themes。题材按涨停原因串里的标签归组(滤掉国企改革、破净等属性词),同义不同名的标签分开算。某天涨停池或原因没取到按缺数(None)处理、标 partial,不当 0;东财涨停池只留约一个月,更早的日子会缺。days 3–10,默认 5(约 2×days 次请求)。已收盘的日子长期缓存;没收盘的那一天一律 partial"
     },
     {
+      "market": [
+        "CN"
+      ],
+      "source": "eastmoney+calc",
+      "compliance": "cn-public",
+      "symbol_kind": "none",
+      "symbol_param": "code",
+      "stages": {},
+      "enabled": true,
+      "computed": true,
+      "libs": [],
+      "mapper_module": "mappers_shortline",
+      "id": "cn_shortline_limit_down",
+      "title": "短线跌停深化(天地面:昨日涨停今日跌停;跌停家数与前 5/20 个交易日均值的比较;高位龙头跌停;当日跌停池换手偏高线索;风险等级)",
+      "layer": "8 打板",
+      "module": "shortline_limit_down",
+      "function": "build_limit_down",
+      "mapper": "shortline_limit_down_map",
+      "endpoint_label": "push2ex 跌停 / 涨停池 → limit_down",
+      "args": {
+        "date": null,
+        "days": 20
+      },
+      "notes": "计算型端点:取数层确定性计算(非 calc DAG);信封 extra.result 是完整结构化结果、extra.text 是给模型读的文字版、extra.computation 记参数供复算。天地面和高位龙头用前一交易日东财涨停池逐只对当日跌停池;5/20 日均值逐日取跌停池,任一天取数失败就给 null + missing_days,不拿 0 顶替,成功但空池才是 0。翘板只按当日跌停池换手率 ≥10% 给线索,不是确认翘板。风险等级由确定性规则推出,前一交易日涨停池取不到时标 unknown,不默认绿灯。已收盘的日子长期缓存;没收盘的那一天一律 partial。冷启动约 25 次东财请求,不放进首屏查询,由收盘取数预热"
+    },
+    {
       "id": "em_market_trend",
       "title": "主要指数中长线(5/20/60/250 日涨跌、年初至今、均线、250 日高低点)+ 沪深两市成交额近 60 日",
       "layer": "19 指数",

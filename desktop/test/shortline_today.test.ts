@@ -9,7 +9,22 @@ const FX = JSON.parse(readFileSync(new URL("./fixtures/shortline-2026-10-09.json
 const done = (result: unknown, extra: Record<string, unknown> = {}) => ({
   state: "done", status: "ok", result, why: "", settled: (result as { settled?: boolean } | null)?.settled ?? null, cached: false, fetched_at: null, ...extra,
 });
-const ALL = { emotion: done(FX.emotion), facts: done(FX.facts), themes: done(FX.themes), firstboard: done(FX.firstboard), cycle: done(FX.cycle), ladder: done(FX.ladder) };
+const LIMIT_DOWN = {
+  available: true, date: "2026-10-09", prev_date: "2026-10-08", settled: true,
+  dt_count: 3, dt_5d_avg: 2.4, dt_20d_avg: 4.1,
+  trend_5d: { avg: 2.4, delta: 0.6, ratio: 1.25, label: "高于均值" },
+  trend_20d: { avg: 4.1, delta: -1.1, ratio: 0.732, label: "低于均值" },
+  history_days_used: 20, history_days_expected: 20, history_missing_days: [],
+  sky_to_ground: [{ code: "600001", name: "天地面测试", sector: "甲", prev_boards: 3, prev_label: "3板", ret: -10, turnover: 12.5, consec_dt: 1, last_seal: "143000" }],
+  sky_to_ground_count: 1,
+  leader_dt: [{ code: "600001", name: "天地面测试", sector: "甲", boards: 3, label: "3板", ret: -10, consec_dt: 1 }],
+  leader_dt_count: 1,
+  pry_open_candidates: [{ code: "600001", name: "天地面测试", sector: "甲", turnover: 12.5, ret: -10, consec_dt: 1 }],
+  pry_open_count: 1,
+  risk_level: "red", risk_score: 4, risk_reasons: ["天地面 1 只", "高位龙头跌停 1 只"],
+  missing: [], note: "测试",
+};
+const ALL = { emotion: done(FX.emotion), facts: done(FX.facts), limitDown: done(LIMIT_DOWN), themes: done(FX.themes), firstboard: done(FX.firstboard), cycle: done(FX.cycle), ladder: done(FX.ladder) };
 const LOADING = { state: "loading" };
 
 async function renderToday(panels: Record<string, unknown>, day: string | null = "2026-10-09") {
@@ -60,7 +75,7 @@ test("今日情绪：还在取的块写「加载中」，没取到的块写原�
   assert.match(failed, /赚钱效应/, "其他块照常显示");
   assert.match(failed, /远程股份/);
 
-  const none = await renderToday({ emotion: LOADING, facts: LOADING, themes: LOADING, firstboard: LOADING, cycle: LOADING, ladder: LOADING }, null);
+  const none = await renderToday({ emotion: LOADING, facts: LOADING, limitDown: LOADING, themes: LOADING, firstboard: LOADING, cycle: LOADING, ladder: LOADING }, null);
   assert.match(none, /情绪四项加载中…/);
   assert.doesNotMatch(none, /复盘日/, "没拿到业务日就不写日期");
 });
@@ -148,6 +163,7 @@ test("给 AI 的文字：读数照抄、缺口明说（还在取 / 没取到不�
     assert.match(all, /赚钱效应\(昨日涨停股当天收盘对收盘\):中位 \+1\.95%/);
     assert.match(all, /9板×1 .*3板缺/);
     assert.match(all, /昨日强势股反馈:首板\(33\)/, "首板排第一");
+    assert.match(all, /跌停深化:当日跌停 3 家/);
     assert.match(all, /固态电池\[延续\]/);
     assert.match(all, /首板 57 家/);
 
@@ -157,9 +173,10 @@ test("给 AI 的文字：读数照抄、缺口明说（还在取 / 没取到不�
     assert.match(all, /4板 1 只\(3进4 1\/4 · 25%\):.*没接上 3 只\(炸板 1 · 没涨停 2\):上海洗霸没涨停\+9\.57%/);
     assert.match(all, /3板 0 只\(2进3 0\/3 · 0%\):无/);
 
-    const gaps = todaySummary("2026-10-09", { ...ALL, facts: { state: "loading" }, cycle: done(null, { status: "failed", why: "超时" }), ladder: { state: "loading" } });
+    const gaps = todaySummary("2026-10-09", { ...ALL, facts: { state: "loading" }, limitDown: { state: "loading" }, cycle: done(null, { status: "failed", why: "超时" }), ladder: { state: "loading" } });
     assert.match(gaps, /连板天梯:还在取,先别据此下结论/);
     assert.match(gaps, /盘面事实:还在取,先别据此下结论/);
+    assert.match(gaps, /跌停深化:还在取,先别据此下结论/);
     assert.match(gaps, /情绪周期:这次没取到\(超时\),不代表是零/);
     assert.doesNotMatch(gaps, /封板质量/);
   });
@@ -199,4 +216,25 @@ test("亏钱效应口径:跌停制度写出两次改制的日期,和取数层算
   });
   const panels = readFileSync(new URL("../src/verticals/finance/shortline/FactsPanels.tsx", import.meta.url), "utf8");
   assert.match(panels, /caliber=\{"样本 = 昨日涨停池全部个股,收盘对收盘。\\n" \+[\s\S]{0,200}LIMIT_RULES_TEXT \+ "\\n" \+/, "亏钱效应的口径说明用的就是这段");
+});
+
+test("跌停深化:风险、天地面、换手线索画出来;历史缺日写成没算,未知风险不给绿灯", async () => {
+  const t = await renderToday(ALL);
+  assert.match(t, /跌停深化/);
+  assert.match(t, /红色 · 风险高/);
+  assert.match(t, /天地面测试/);
+  assert.match(t, /换手偏高的跌停股 · 只是线索，不是确认翘板/);
+
+  const partial = {
+    ...LIMIT_DOWN, dt_5d_avg: null, trend_5d: null,
+    history_missing_days: [{ date: "2026-10-08", reason: "超时" }],
+  };
+  const t2 = await renderToday({ ...ALL, limitDown: done(partial) });
+  assert.match(t2, /历史跌停池有 1 个交易日没取到/);
+  assert.match(t2, /5 日均值没算出来/);
+  assert.doesNotMatch(t2, /5 日均值 0 只/, "缺日不能写成 0");
+
+  const unknown = await renderToday({ ...ALL, limitDown: done({ ...LIMIT_DOWN, risk_level: "unknown", risk_reasons: ["前一交易日涨停池没取到,天地面和龙头跌停无法判断,不能给绿灯"] }) });
+  assert.match(unknown, /未知 · 关键输入没取到/);
+  assert.match(unknown, /不能给绿灯/);
 });

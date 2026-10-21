@@ -33,6 +33,7 @@ export const SHORTLINE_PAGE_QUERIES: Record<string, PageQueryDef> = {
     intent: "这一天发生了什么:昨日强势股的反馈、亏钱效应、封板质量、关键事件、分涨跌幅制度",
     blocks: [
       { id: "facts", title: "盘面事实", note: "封板质量 / 亏钱效应 / 昨日强势股反馈 / 行业结构 / 关键事件 / 分制度生态", endpoint: "cn_shortline_facts", userArgs: DATE_ONLY },
+      { id: "limit_down", title: "跌停深化", note: "天地面 / 跌停家数与前 5、20 个交易日均值 / 高位龙头跌停 / 换手偏高线索 / 风险等级;缺失日不当 0", endpoint: "cn_shortline_limit_down", userArgs: DATE_ONLY },
     ],
   },
   shortline_themes: {

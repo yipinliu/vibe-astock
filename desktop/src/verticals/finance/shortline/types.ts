@@ -210,3 +210,38 @@ export interface ThemeRotation {
   partial_days?: string[];
 }
 export interface ThemeRotationResult { date: string; days: number; settled?: boolean; rotation: ThemeRotation }
+
+// ---------- 跌停深化(cn_shortline_limit_down)----------
+export interface LimitDownTrend { avg: number; delta: number; ratio: number | null; label: string }
+export interface LimitDownSky {
+  code: string; name: string; sector: string;
+  prev_boards: number; prev_label: string;
+  ret: number | null; turnover: number | null; consec_dt: number | null; last_seal: string | null;
+}
+export interface LimitDownLeader {
+  code: string; name: string; sector: string;
+  boards: number; label: string; ret: number | null; consec_dt: number | null;
+}
+export interface LimitDownPry {
+  code: string; name: string; sector: string;
+  turnover: number | null; ret: number | null; consec_dt: number | null;
+}
+export interface LimitDownMissing { field?: string; date?: string; reason: string }
+export interface LimitDownResult {
+  available: boolean; reason?: string;
+  date: string; prev_date: string; settled?: boolean;
+  dt_count: number; dt_5d_avg: number | null; dt_20d_avg: number | null;
+  trend_5d: LimitDownTrend | null; trend_20d: LimitDownTrend | null;
+  history_days_used: number; history_days_expected: number;
+  /** 历史跌停池没取到的日子；这些日子的家数不当 0 */
+  history_missing_days: { date: string; reason: string }[];
+  sky_to_ground: LimitDownSky[]; sky_to_ground_count: number;
+  leader_dt: LimitDownLeader[]; leader_dt_count: number;
+  /** 换手率 ≥10% 的跌停股；只是线索，不是确认翘板 */
+  pry_open_candidates: LimitDownPry[]; pry_open_count: number;
+  /** unknown = 前一交易日涨停池没取到，天地面 / 龙头跌停无法判断 */
+  risk_level: "red" | "yellow" | "green" | "unknown";
+  risk_score: number; risk_reasons: string[];
+  missing: LimitDownMissing[];
+  note: string;
+}

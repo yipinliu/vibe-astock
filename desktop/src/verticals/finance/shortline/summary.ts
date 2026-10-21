@@ -5,7 +5,7 @@
 import type { Panel } from "./api";
 import { ladderSummary } from "./BoardLadderPanel";
 import { finite, hhmm, ladderRows, rate, safeArray, safeRecord, signed, tierOrder } from "./format";
-import type { BoardLadderResult, CycleResult, EmotionResult, FactsResult, FeedbackCell, FirstBoardResult, FirstBoardStock, LedgerEvent, PromotionTier, ThemeNode, ThemesResult } from "./types";
+import type { BoardLadderResult, CycleResult, EmotionResult, FactsResult, FeedbackCell, FirstBoardResult, FirstBoardStock, LedgerEvent, LimitDownResult, PromotionTier, ThemeNode, ThemesResult } from "./types";
 
 function missing<T>(label: string, p: Panel<T>): string | null {
   if (p.state === "loading") return `${label}:还在取,先别据此下结论`;
@@ -17,7 +17,7 @@ const off = (label: string, x?: { available?: boolean; reason?: string }) =>
   x && x.available === false ? `${label}:没算出来(${x.reason ?? "原因不明"})` : null;
 
 export function todaySummary(day: string | null, p: {
-  emotion: Panel<EmotionResult>; facts: Panel<FactsResult>; themes: Panel<ThemesResult>;
+  emotion: Panel<EmotionResult>; facts: Panel<FactsResult>; limitDown: Panel<LimitDownResult>; themes: Panel<ThemesResult>;
   firstboard: Panel<FirstBoardResult>; cycle: Panel<CycleResult>; ladder: Panel<BoardLadderResult>;
 }): string {
   const out: string[] = [];
@@ -65,6 +65,18 @@ export function todaySummary(day: string | null, p: {
     const bb = f.by_board;
     const boards = Object.entries(safeRecord<{ limit_up: number; highest: number; promotion_rate: number | null }>(bb?.boards)).map(([k, g]) => `${k} 涨停 ${g.limit_up}、最高 ${g.highest} 板、晋级率 ${rate(g.promotion_rate)}`);
     if (boards.length) out.push(`分涨跌幅制度:${boards.join(";")}`);
+  }
+
+  const md = missing("跌停深化", p.limitDown);
+  if (md) out.push(md);
+  else if (p.limitDown.state === "done" && p.limitDown.result) {
+    const r = p.limitDown.result;
+    const risk = r.risk_level === "red" ? "红色(风险高)" : r.risk_level === "yellow" ? "黄色(需警惕)"
+      : r.risk_level === "green" ? "绿色(正常)" : "未知(前一交易日涨停池没取到)";
+    const avg = (t: typeof r.trend_5d) => (t ? `${t.avg.toFixed(2)} 只` : "没算出来");
+    out.push(off("跌停深化", r) ?? `跌停深化:当日跌停 ${r.dt_count} 家;5 日均值 ${avg(r.trend_5d)},20 日均值 ${avg(r.trend_20d)};`
+      + `天地面 ${r.sky_to_ground_count} 家、高位龙头跌停 ${r.leader_dt_count} 家、换手偏高线索 ${r.pry_open_count} 家;风险 ${risk}`
+      + (safeArray(r.history_missing_days).length ? `;历史跌停池有 ${r.history_missing_days.length} 天没取到,缺失日没当 0` : ""));
   }
 
   const m3 = missing("题材事件树", p.themes);
