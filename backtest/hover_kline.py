@@ -76,17 +76,23 @@ def _daily_series(rows: list[dict], scale: Optional[int]) -> dict:
                 out.append(round(sum(window) / n, 4) if len(window) == n else None)
         return out
 
+    def volume_of(r: dict) -> Optional[int]:
+        v = _num(r.get("volume"))
+        return int(round(v * scale)) if v is not None and scale else None
+
+    change: List[Optional[float]] = [None]
+    for i in range(1, len(closes)):
+        cur, prev = closes[i], closes[i - 1]
+        change.append(round(cur / prev - 1, 6) if cur is not None and prev is not None and prev > 0 else None)
+
     return {
         "dates": [str(r["date"]) for r in good],
         "open": [_num(r.get("open")) for r in good],
         "high": [_num(r.get("high")) for r in good],
         "low": [_num(r.get("low")) for r in good],
         "close": closes,
-        "volume": [int(round(float(r["volume"]) * scale)) if scale and _num(r.get("volume")) is not None else None for r in good],
-        "change": [None] + [
-            round(closes[i] / closes[i - 1] - 1, 6) if closes[i] is not None and closes[i - 1] and closes[i - 1] > 0 else None
-            for i in range(1, len(closes))
-        ],
+        "volume": [volume_of(r) for r in good],
+        "change": change,
         "ma5": ma(5),
         "ma20": ma(20),
     }
