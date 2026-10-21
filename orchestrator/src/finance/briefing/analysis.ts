@@ -229,7 +229,7 @@ function validStocks(raw: unknown, d: Dossier, warnings: string[]): RawStock[] {
     const rawCode = cleanLine(x.stock_code, 10);
     // 只接受原文里真实出现过的六位代码;模型编的代码不采信
     const code = /^\d{6}$/.test(rawCode) && d.text.includes(rawCode) ? rawCode : "";
-    const key = `${name} ${code}`;
+    const key = `${name}\u0000${code}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ stock_name: name, stock_code: code, mention_type: mentionType, thesis, metrics, topic_ids: ids });
