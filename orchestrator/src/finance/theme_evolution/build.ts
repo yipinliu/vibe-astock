@@ -279,12 +279,17 @@ function timelinesOf(reg: ThemeRegistry, date: string, current: ThemeDaily | nul
 /** 构建某天的题材演进。persist=true 才写注册表和日文件;GET 永远走 readDaily。 */
 export async function buildThemes(
   ctx: ServiceContext, date: string,
-  opts: { persist?: boolean; force?: boolean; signal?: AbortSignal } = {},
+  opts: { persist?: boolean; force?: boolean; signal?: AbortSignal; now?: Date } = {},
   fetch: Fetch = fetchEndpoint,
 ): Promise<ThemeDaily | BuildUnavailable> {
   if (!validDate(date)) throw new ServiceError("bad_request", "date 要写成 YYYY-MM-DD");
-  const today = localClock(new Date(), SCHEDULE_TZ).day;
+  const clock = localClock(opts.now ?? new Date(), SCHEDULE_TZ);
+  const today = clock.day;
   if (date > today) throw new ServiceError("bad_request", `${date} 还没到`);
+  // 盘中不落盘:没收盘的数字还会变,GET 只能读到收盘后构建的那一版
+  if (opts.persist && date === today && clock.hm < "15:05") {
+    throw new ServiceError("theme_not_settled", "今天还没收盘,15:05 后再生成快照");
+  }
   if (!opts.force) {
     const cached = readDaily(ctx.dataRoot, date);
     if (cached) return cached;

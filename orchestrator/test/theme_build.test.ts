@@ -18,6 +18,7 @@ import {
 import "../src/finance/theme_evolution/register.ts";
 
 const today = () => localClock(new Date(), SCHEDULE_TZ).day;
+const afterClose = () => new Date(`${today()}T16:00:00+08:00`);
 const ctxOf = (dataRoot: string) => ({ dataRoot } as ServiceContext);
 const tmpRoot = () => fs.mkdtempSync(path.join(os.tmpdir(), "vra-themes-"));
 
@@ -163,9 +164,22 @@ test("timeline:没生成 / 没这个题材的日子是 null,不是 0", async () 
 
 test("构建失败写原因,不落盘", async () => {
   const root = tmpRoot();
-  const got = await buildThemes(ctxOf(root), today(), { persist: true }, fakeFetch({ themesStatus: "failed", reason: "源站超时" }));
+  const got = await buildThemes(ctxOf(root), today(), { persist: true, now: afterClose() }, fakeFetch({ themesStatus: "failed", reason: "源站超时" }));
   assert.deepEqual(got, { available: false, date: today(), reason: "源站超时" });
   assert.equal(fs.existsSync(path.join(root, "shortline")), false);
+});
+
+test("盘中不落盘:收盘前构建只给内存结果,刷新后仍要重新构建", async () => {
+  const root = tmpRoot();
+  const beforeClose = new Date(`${today()}T10:00:00+08:00`);
+  await assert.rejects(
+    buildThemes(ctxOf(root), today(), { persist: true, now: beforeClose }, fakeFetch({ themes: [rawTheme("AI算力", 2)] })),
+    /还没收盘/,
+  );
+  assert.equal(fs.existsSync(dailyFile(root, today())), false);
+  const draft = await buildThemes(ctxOf(root), today(), { persist: false, now: beforeClose }, fakeFetch({ themes: [rawTheme("AI算力", 2)] }));
+  assert.ok(draft.available);
+  assert.equal(fs.existsSync(dailyFile(root, today())), false);
 });
 
 test("GET 只读:不创建目录、不改日文件和注册表", async () => {
@@ -177,7 +191,7 @@ test("GET 只读:不创建目录、不改日文件和注册表", async () => {
   assert.equal(empty.needs_build, true);
   assert.equal(fs.existsSync(path.join(root, "shortline")), false, "GET 不能顺手创建注册表目录");
 
-  const built = await buildThemes(ctx, today(), { persist: true }, fakeFetch({ themes: [rawTheme("AI算力", 2)] }));
+  const built = await buildThemes(ctx, today(), { persist: true, now: afterClose() }, fakeFetch({ themes: [rawTheme("AI算力", 2)] }));
   assert.ok(built.available);
   const daily = fs.readFileSync(dailyFile(root, today()), "utf8");
   const reg = fs.readFileSync(registryFile(root), "utf8");

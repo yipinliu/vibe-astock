@@ -15,6 +15,7 @@ import {
 import { narrateThemes, type Turn } from "../src/finance/theme_evolution/narrative.ts";
 
 const today = () => localClock(new Date(), SCHEDULE_TZ).day;
+const afterClose = () => new Date(`${today()}T16:00:00+08:00`);
 const ctxOf = (dataRoot: string) => ({ dataRoot } as ServiceContext);
 const tmpRoot = () => fs.mkdtempSync(path.join(os.tmpdir(), "vra-theme-narr-"));
 
@@ -36,7 +37,7 @@ const fetchOf = (themes: unknown[]) => async (_ctx: ServiceContext, req: { endpo
 };
 
 async function setup(root: string, tags: string[]) {
-  const built = await buildThemes(ctxOf(root), today(), { persist: true }, fetchOf(tags.map((t) => rawTheme(t))) as never);
+  const built = await buildThemes(ctxOf(root), today(), { persist: true, now: afterClose() }, fetchOf(tags.map((t) => rawTheme(t))) as never);
   assert.ok(built.available);
   if (!built.available) throw new Error("build failed");
   return built;
