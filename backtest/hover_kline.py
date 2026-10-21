@@ -23,6 +23,13 @@ INTRADAY_COUNT = 240
 DAILY_COUNT = 60
 
 
+CATALOG = {
+    "description": "个股悬浮卡:最近一个交易日的分时 + 最近 60 根前复权日线。"
+                   "只支持 A 股,只读公开行情、不写用户数据,不给买卖点。",
+    "parameters": {"symbol": "600519 / 600519.SH"},
+}
+
+
 class HoverKlineError(ValueError):
     """业务上画不了(认不出代码、不是 A 股、两边都取不到)。"""
 
@@ -188,6 +195,9 @@ def main() -> None:
         return
     if not isinstance(req, dict):
         print(json.dumps({"ok": False, "error": "入参必须是对象"}, ensure_ascii=False))
+        return
+    if req.get("action") == "catalog":
+        print(json.dumps({"ok": True, "catalog": CATALOG}, ensure_ascii=False))
         return
     try:
         with tempfile.TemporaryDirectory(prefix="vra-hover-kline-") as scratch:

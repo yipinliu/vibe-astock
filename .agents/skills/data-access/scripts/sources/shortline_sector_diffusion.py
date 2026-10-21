@@ -65,7 +65,7 @@ def build_sector_diffusion(date: Optional[str] = None) -> dict:
     d3_count = historical["d3"]
     names = set(today_count) | set(y_count or {}) | set(d3_count or {})
 
-    sectors = []
+    sectors: list[dict[str, Any]] = []
     for name in names:
         t = today_count.get(name, 0)
         y = (y_count or {}).get(name, 0) if y_count is not None else None

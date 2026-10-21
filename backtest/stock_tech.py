@@ -16,6 +16,12 @@ from backtest.loader import LoaderError, bare, canonical_code, market_of
 MAX_SYMBOLS = 30
 BARS = 90
 
+CATALOG = {
+    "description": "批量技术读数:MA5 / 10 / 20 / 60、近 5 / 20 日涨跌、距 60 日高低点、量比。"
+                   "纯计算、只读公开前复权日线,不下结论。",
+    "parameters": {"symbols": "最多 30 个 A 股代码"},
+}
+
 
 def _avg(xs: List[Optional[float]], n: int) -> Optional[float]:
     if len(xs) < n:
@@ -109,6 +115,9 @@ def main() -> None:
         return
     if not isinstance(req, dict):
         print(json.dumps({"ok": False, "error": "入参必须是对象"}, ensure_ascii=False))
+        return
+    if req.get("action") == "catalog":
+        print(json.dumps({"ok": True, "catalog": CATALOG}, ensure_ascii=False))
         return
     try:
         with tempfile.TemporaryDirectory(prefix="vra-stock-tech-") as scratch:

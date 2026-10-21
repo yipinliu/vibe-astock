@@ -30,6 +30,12 @@ MAX_TITLE = 300
 MAX_TOPICS = 30
 RETRY_BACKOFF = (3, 8)
 
+CATALOG = {
+    "description": "个人订阅简报抓取:一次取最新约 30 条,归一化成标题 / 作者 / 机构 / 正文。"
+                   "只在服务端由简报视图调用,不写盘、不向普通对话提供。",
+    "parameters": {"group_id": "订阅组 ID(6–24 位数字)", "count": "条数,最多 30"},
+}
+
 
 def _int(v: Any) -> int:
     try:
@@ -199,6 +205,9 @@ def main() -> None:
         return
     if not isinstance(req, dict):
         print(json.dumps({"ok": False, "error": "入参必须是对象"}, ensure_ascii=False))
+        return
+    if req.get("action") == "catalog":
+        print(json.dumps({"ok": True, "catalog": CATALOG}, ensure_ascii=False))
         return
     try:
         result = crawl(req.get("group_id"), req.get("count"))
