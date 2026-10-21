@@ -12,13 +12,15 @@ import { ConsecPremiumCard, CycleCard, LadderCard, MoneyEffectCard, PromotionCar
 import { BoardSystemSection, Ledger, LossEffectSection, Matrix, SealQualitySection, ThemeTreeView, Themes } from "./FactsPanels";
 import { FirstBoardPanel } from "./FirstBoardPanel";
 import { LimitDownPanel } from "./LimitDownPanel";
+import { SectorDiffusionPanel } from "./SectorDiffusionPanel";
 import { todaySummary } from "./summary";
-import type { BoardLadderResult, ConsecPremium, CycleResult, EmotionResult, FactsResult, FirstBoardResult, LadderGap, LimitDownResult, MoneyEffect, Promotion, ThemesResult } from "./types";
+import type { BoardLadderResult, ConsecPremium, CycleResult, EmotionResult, FactsResult, FirstBoardResult, LadderGap, LimitDownResult, MoneyEffect, Promotion, SectorDiffusionResult, ThemesResult } from "./types";
 
 export interface TodayPanels {
   emotion: Panel<EmotionResult>;
   facts: Panel<FactsResult>;
   limitDown: Panel<LimitDownResult>;
+  sectorDiffusion: Panel<SectorDiffusionResult>;
   themes: Panel<ThemesResult>;
   firstboard: Panel<FirstBoardResult>;
   cycle: Panel<CycleResult>;
@@ -44,7 +46,7 @@ export function Slot<T>({ p, title, children, minH = "min-h-[8rem]" }: { p: Pane
 const OFF = { available: false } as const;
 
 export function TodayTab({ day, panels }: { day: string | null; panels: TodayPanels }) {
-  const { emotion, facts, limitDown, themes, firstboard, cycle, ladder } = panels;
+  const { emotion, facts, limitDown, sectorDiffusion, themes, firstboard, cycle, ladder } = panels;
   const e = emotion.state === "done" ? emotion.result : null;
 
   useAiPage(day ? {
@@ -106,6 +108,11 @@ export function TodayTab({ day, panels }: { day: string | null; panels: TodayPan
       {/* 3b. 跌停深化:天地面 / 高位龙头 / 趋势 / 换手线索 */}
       <Slot p={limitDown} title="跌停深化">
         {(r) => <LimitDownPanel r={r} />}
+      </Slot>
+
+      {/* 3c. 板块扩散:行业今天 vs 昨天 vs 3 天前 */}
+      <Slot p={sectorDiffusion} title="板块扩散">
+        {(r) => <SectorDiffusionPanel r={r} />}
       </Slot>
 
       {/* 4. 钱在哪些题材 */}

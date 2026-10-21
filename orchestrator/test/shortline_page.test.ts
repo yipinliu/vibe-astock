@@ -35,7 +35,7 @@ test("情绪复盘拆成几个查询:第一个解析业务日,其余只吃页面
   const qs = currentPlugin().pageQueries ?? {};
   const ends = (q: string) => qs[q]?.blocks.map((b) => b.endpoint);
   assert.deepEqual(ends("shortline"), ["cn_shortline_emotion"]);
-  assert.deepEqual(ends("shortline_facts"), ["cn_shortline_facts", "cn_shortline_limit_down"]);
+  assert.deepEqual(ends("shortline_facts"), ["cn_shortline_facts", "cn_shortline_limit_down", "cn_shortline_sector_diffusion"]);
   assert.deepEqual(ends("shortline_themes"), ["cn_shortline_themes", "cn_shortline_firstboard"]);
   assert.deepEqual(ends("shortline_cycle"), ["cn_shortline_cycle"]);
   assert.deepEqual(ends("shortline_ladder"), ["cn_shortline_board_ladder"]);

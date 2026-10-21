@@ -34,6 +34,7 @@ export const SHORTLINE_PAGE_QUERIES: Record<string, PageQueryDef> = {
     blocks: [
       { id: "facts", title: "盘面事实", note: "封板质量 / 亏钱效应 / 昨日强势股反馈 / 行业结构 / 关键事件 / 分制度生态", endpoint: "cn_shortline_facts", userArgs: DATE_ONLY },
       { id: "limit_down", title: "跌停深化", note: "天地面 / 跌停家数与前 5、20 个交易日均值 / 高位龙头跌停 / 换手偏高线索 / 风险等级;缺失日不当 0", endpoint: "cn_shortline_limit_down", userArgs: DATE_ONLY },
+      { id: "sector_diffusion", title: "板块扩散", note: "东财行业今天 / 昨天 / 3 天前的涨停家数与趋势;某天失败时趋势 unknown,不当 0", endpoint: "cn_shortline_sector_diffusion", userArgs: DATE_ONLY },
     ],
   },
   shortline_themes: {

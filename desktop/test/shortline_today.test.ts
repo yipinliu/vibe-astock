@@ -24,7 +24,20 @@ const LIMIT_DOWN = {
   risk_level: "red", risk_score: 4, risk_reasons: ["天地面 1 只", "高位龙头跌停 1 只"],
   missing: [], note: "测试",
 };
-const ALL = { emotion: done(FX.emotion), facts: done(FX.facts), limitDown: done(LIMIT_DOWN), themes: done(FX.themes), firstboard: done(FX.firstboard), cycle: done(FX.cycle), ladder: done(FX.ladder) };
+const SECTOR_DIFFUSION = {
+  available: true, date: "2026-10-09", prev_date: "2026-10-08", d3_date: "2026-09-30", settled: true,
+  sectors: [
+    { sector: "固态电池", today: 5, yesterday: 3, "3days_ago": 1, trend: "扩散中" },
+    { sector: "新方向", today: 1, yesterday: 0, "3days_ago": 0, trend: "扩散中" },
+    { sector: "机器人", today: 2, yesterday: 2, "3days_ago": 1, trend: "稳定" },
+    { sector: "传媒", today: 0, yesterday: 3, "3days_ago": 2, trend: "退潮中" },
+    { sector: "化工", today: 2, yesterday: 4, "3days_ago": 1, trend: "收缩" },
+  ],
+  sector_count: 4, diffusing_count: 2, fading_count: 1,
+  new_sectors: ["新方向"], top_diffusing: ["固态电池", "新方向"], top_fading: ["传媒"],
+  missing_days: [], empty: false, note: "测试",
+};
+const ALL = { emotion: done(FX.emotion), facts: done(FX.facts), limitDown: done(LIMIT_DOWN), sectorDiffusion: done(SECTOR_DIFFUSION), themes: done(FX.themes), firstboard: done(FX.firstboard), cycle: done(FX.cycle), ladder: done(FX.ladder) };
 const LOADING = { state: "loading" };
 
 async function renderToday(panels: Record<string, unknown>, day: string | null = "2026-10-09") {
@@ -75,7 +88,7 @@ test("今日情绪：还在取的块写「加载中」，没取到的块写原�
   assert.match(failed, /赚钱效应/, "其他块照常显示");
   assert.match(failed, /远程股份/);
 
-  const none = await renderToday({ emotion: LOADING, facts: LOADING, limitDown: LOADING, themes: LOADING, firstboard: LOADING, cycle: LOADING, ladder: LOADING }, null);
+  const none = await renderToday({ emotion: LOADING, facts: LOADING, limitDown: LOADING, sectorDiffusion: LOADING, themes: LOADING, firstboard: LOADING, cycle: LOADING, ladder: LOADING }, null);
   assert.match(none, /情绪四项加载中…/);
   assert.doesNotMatch(none, /复盘日/, "没拿到业务日就不写日期");
 });
@@ -164,6 +177,7 @@ test("给 AI 的文字：读数照抄、缺口明说（还在取 / 没取到不�
     assert.match(all, /9板×1 .*3板缺/);
     assert.match(all, /昨日强势股反馈:首板\(33\)/, "首板排第一");
     assert.match(all, /跌停深化:当日跌停 3 家/);
+    assert.match(all, /板块扩散\(行业,不是题材串\):今天有涨停 4 个行业/);
     assert.match(all, /固态电池\[延续\]/);
     assert.match(all, /首板 57 家/);
 
@@ -173,10 +187,11 @@ test("给 AI 的文字：读数照抄、缺口明说（还在取 / 没取到不�
     assert.match(all, /4板 1 只\(3进4 1\/4 · 25%\):.*没接上 3 只\(炸板 1 · 没涨停 2\):上海洗霸没涨停\+9\.57%/);
     assert.match(all, /3板 0 只\(2进3 0\/3 · 0%\):无/);
 
-    const gaps = todaySummary("2026-10-09", { ...ALL, facts: { state: "loading" }, limitDown: { state: "loading" }, cycle: done(null, { status: "failed", why: "超时" }), ladder: { state: "loading" } });
+    const gaps = todaySummary("2026-10-09", { ...ALL, facts: { state: "loading" }, limitDown: { state: "loading" }, sectorDiffusion: { state: "loading" }, cycle: done(null, { status: "failed", why: "超时" }), ladder: { state: "loading" } });
     assert.match(gaps, /连板天梯:还在取,先别据此下结论/);
     assert.match(gaps, /盘面事实:还在取,先别据此下结论/);
     assert.match(gaps, /跌停深化:还在取,先别据此下结论/);
+    assert.match(gaps, /板块扩散:还在取,先别据此下结论/);
     assert.match(gaps, /情绪周期:这次没取到\(超时\),不代表是零/);
     assert.doesNotMatch(gaps, /封板质量/);
   });
@@ -237,4 +252,29 @@ test("跌停深化:风险、天地面、换手线索画出来;历史缺日写成
   const unknown = await renderToday({ ...ALL, limitDown: done({ ...LIMIT_DOWN, risk_level: "unknown", risk_reasons: ["前一交易日涨停池没取到,天地面和龙头跌停无法判断,不能给绿灯"] }) });
   assert.match(unknown, /未知 · 关键输入没取到/);
   assert.match(unknown, /不能给绿灯/);
+});
+
+test("板块扩散:今天/昨天/3 天前与趋势画出来;缺数写「—」「缺数」,空池是 0", async () => {
+  const t = await renderToday(ALL);
+  assert.match(t, /板块扩散/);
+  assert.match(t, /今天有涨停的行业 4 个/);
+  assert.match(t, /扩散中 2/);
+  assert.match(t, /新方向/);
+  assert.match(t, /传媒/);
+  assert.match(t, /退潮中/);
+  assert.match(t, /行业按东财所属行业归组,不是涨停原因题材/);
+
+  const partial = {
+    ...SECTOR_DIFFUSION,
+    missing_days: [{ date: "2026-09-30", reason: "超时" }],
+    sectors: SECTOR_DIFFUSION.sectors.map((x) => ({ ...x, "3days_ago": null, trend: "unknown" })),
+  };
+  const t2 = await renderToday({ ...ALL, sectorDiffusion: done(partial) });
+  assert.match(t2, /历史涨停池有 1 天没取到/);
+  assert.match(t2, /缺数/);
+  assert.doesNotMatch(t2, /3 天前 0/, "缺数不能写成 0");
+
+  const empty = { ...SECTOR_DIFFUSION, sectors: [], sector_count: 0, diffusing_count: 0, fading_count: 0, new_sectors: [], top_diffusing: [], top_fading: [], empty: true };
+  const t3 = await renderToday({ ...ALL, sectorDiffusion: done(empty) });
+  assert.match(t3, /这一天的涨停池是空的\(取数成功\),没有可统计的行业/);
 });

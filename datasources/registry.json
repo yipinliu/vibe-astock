@@ -4025,6 +4025,31 @@
       "notes": "计算型端点:取数层确定性计算(非 calc DAG);信封 extra.result 是完整结构化结果、extra.text 是给模型读的文字版、extra.computation 记参数供复算。天地面和高位龙头用前一交易日东财涨停池逐只对当日跌停池;5/20 日均值逐日取跌停池,任一天取数失败就给 null + missing_days,不拿 0 顶替,成功但空池才是 0。翘板只按当日跌停池换手率 ≥10% 给线索,不是确认翘板。风险等级由确定性规则推出,前一交易日涨停池取不到时标 unknown,不默认绿灯。已收盘的日子长期缓存;没收盘的那一天一律 partial。冷启动约 25 次东财请求,不放进首屏查询,由收盘取数预热"
     },
     {
+      "market": [
+        "CN"
+      ],
+      "source": "eastmoney+calc",
+      "compliance": "cn-public",
+      "symbol_kind": "none",
+      "symbol_param": "code",
+      "stages": {},
+      "enabled": true,
+      "computed": true,
+      "libs": [],
+      "mapper_module": "mappers_shortline",
+      "id": "cn_shortline_sector_diffusion",
+      "title": "短线板块涨停扩散度(按东财行业:今天 / 昨天 / 3 天前的涨停家数与趋势;新出现和退潮的行业)",
+      "layer": "8 打板",
+      "module": "shortline_sector_diffusion",
+      "function": "build_sector_diffusion",
+      "mapper": "shortline_sector_diffusion_map",
+      "endpoint_label": "逐日 push2ex 涨停池 → sector_diffusion",
+      "args": {
+        "date": null
+      },
+      "notes": "计算型端点:取数层确定性计算(非 calc DAG);信封 extra.result 是完整结构化结果、extra.text 是给模型读的文字版、extra.computation 记参数供复算。行业按东财所属行业归组,不是涨停原因题材串;昨天 / 3 天前按交易日历取,不按自然日减。某天涨停池取数失败时该天计数为空、趋势 unknown,不拿 0 顶替;成功但池子为空才是 0。今天涨停池取数失败则整个端点不可用。已收盘的日子长期缓存;没收盘的那一天一律 partial"
+    },
+    {
       "id": "em_market_trend",
       "title": "主要指数中长线(5/20/60/250 日涨跌、年初至今、均线、250 日高低点)+ 沪深两市成交额近 60 日",
       "layer": "19 指数",

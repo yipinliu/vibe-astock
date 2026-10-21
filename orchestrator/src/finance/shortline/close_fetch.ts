@@ -16,6 +16,7 @@ export const CLOSE_FETCH_ENDPOINTS: readonly { endpoint: string; label: string }
   { endpoint: "cn_shortline_facts", label: "事实表" },
   { endpoint: "cn_shortline_board_ladder", label: "连板天梯" },
   { endpoint: "cn_shortline_limit_down", label: "跌停深化" },
+  { endpoint: "cn_shortline_sector_diffusion", label: "板块扩散" },
 ];
 
 type Fetch = (ctx: ServiceContext, req: Parameters<typeof fetchEndpoint>[1]) => Promise<Pick<FetchResult, "envelope">>;

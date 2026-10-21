@@ -245,3 +245,23 @@ export interface LimitDownResult {
   missing: LimitDownMissing[];
   note: string;
 }
+
+// ---------- 板块涨停扩散度(cn_shortline_sector_diffusion)----------
+export type SectorTrend = "扩散中" | "退潮中" | "稳定" | "收缩" | "unknown";
+export interface SectorDiffusionRow {
+  sector: string; today: number;
+  /** null = 这一天涨停池没取到,不是 0 */
+  yesterday: number | null; "3days_ago": number | null;
+  trend: SectorTrend;
+}
+export interface SectorDiffusionResult {
+  available: boolean; reason?: string;
+  date: string; prev_date: string; d3_date: string; settled?: boolean;
+  sectors: SectorDiffusionRow[];
+  sector_count: number; diffusing_count: number; fading_count: number;
+  new_sectors: string[]; top_diffusing: string[]; top_fading: string[];
+  missing_days: { date: string; reason: string }[];
+  /** 当日涨停池成功但为空(不是取数失败) */
+  empty: boolean;
+  note: string;
+}

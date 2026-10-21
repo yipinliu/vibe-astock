@@ -22,6 +22,7 @@ from sources.shortline_emotion import render_cycle, render_daily, render_metrics
 from sources.shortline_facts import render_facts  # noqa: E402
 from sources.shortline_live import render_live  # noqa: E402
 from sources.shortline_limit_down import render_limit_down  # noqa: E402
+from sources.shortline_sector_diffusion import render_sector_diffusion  # noqa: E402
 from sources.shortline_structure import POOLS, render_structure  # noqa: E402
 from sources.shortline_themes import render_firstboard, render_themes  # noqa: E402
 from sources.shortline_watch import render_bigcaps, render_ladder, render_turnover_top  # noqa: E402
@@ -647,3 +648,34 @@ def shortline_limit_down_map(result: dict, ctx: dict) -> dict:
                                          {"date": day, "days": result.get("history_days_expected")},
                                          "跌停池明细取东财;5/20 日均值逐日取跌停池;缺失日不当 0")}
     return a.finish(bool(result.get("settled")), extra, "跌停深化没算出来")
+
+
+# ---------------------------------------------------------------- 板块涨停扩散
+def shortline_sector_diffusion_map(result: dict, ctx: dict) -> dict:
+    """行业涨停家数今天 vs 昨天 vs 3 天前;失败日计数为空、趋势 unknown。"""
+    if not result:
+        return empty("板块扩散计算为空")
+    day = result["date"]
+    a = _Acc(ctx, day)
+    if a.block("sector_diffusion", result):
+        a.num("sector_count", result.get("sector_count"), "个", note="今天有涨停的东财行业个数")
+        a.num("sector_diffusing_count", result.get("diffusing_count"), "个", note="今天同时高于昨天和 3 天前的行业个数")
+        a.num("sector_fading_count", result.get("fading_count"), "个", note="今天同时不高于昨天和 3 天前的行业个数")
+        for name in result.get("new_sectors") or []:
+            a.text("sector_new", name, key=name, note="今天有涨停、昨天和 3 天前都没有")
+        note = "行业按东财所属行业归组,不是题材串;今天 / 昨天 / 3 天前(交易日历)"
+        for x in result.get("sectors") or []:
+            k = x["sector"]
+            a.num("sector_limit_up_today", x["today"], "只", key=k, note=note)
+            a.num("sector_limit_up_yesterday", x["yesterday"], "只", key=k, note=note)
+            a.num("sector_limit_up_3d_ago", x["3days_ago"], "只", key=k, note=note)
+            a.text("sector_trend", x["trend"], key=k, note="今天 vs 昨天 vs 3 天前的确定性规则;unknown = 历史涨停池缺数")
+        for m in result.get("missing_days") or []:
+            a.missing.append({"field": "sector_history", "period": m.get("date") or day,
+                              "reason": m.get("reason") or "涨停池没取到"})
+        # 池子为空是有效的一天(0 家),不标 partial:标了会让这天的结果永远进不了长期缓存。
+    extra = {"date": day, "prev_date": result.get("prev_date"), "d3_date": result.get("d3_date"),
+             "settled": result.get("settled"), "text": render_sector_diffusion(result), "result": result,
+             "computation": _computation("shortline_sector_diffusion.build_sector_diffusion", {"date": day},
+                                         "逐日东财涨停池;昨天 / 3 天前按交易日历,失败日不当 0")}
+    return a.finish(bool(result.get("settled")), extra, "板块扩散没算出来")

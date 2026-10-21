@@ -5,7 +5,7 @@
 import type { Panel } from "./api";
 import { ladderSummary } from "./BoardLadderPanel";
 import { finite, hhmm, ladderRows, rate, safeArray, safeRecord, signed, tierOrder } from "./format";
-import type { BoardLadderResult, CycleResult, EmotionResult, FactsResult, FeedbackCell, FirstBoardResult, FirstBoardStock, LedgerEvent, LimitDownResult, PromotionTier, ThemeNode, ThemesResult } from "./types";
+import type { BoardLadderResult, CycleResult, EmotionResult, FactsResult, FeedbackCell, FirstBoardResult, FirstBoardStock, LedgerEvent, LimitDownResult, PromotionTier, SectorDiffusionResult, ThemeNode, ThemesResult } from "./types";
 
 function missing<T>(label: string, p: Panel<T>): string | null {
   if (p.state === "loading") return `${label}:还在取,先别据此下结论`;
@@ -17,7 +17,8 @@ const off = (label: string, x?: { available?: boolean; reason?: string }) =>
   x && x.available === false ? `${label}:没算出来(${x.reason ?? "原因不明"})` : null;
 
 export function todaySummary(day: string | null, p: {
-  emotion: Panel<EmotionResult>; facts: Panel<FactsResult>; limitDown: Panel<LimitDownResult>; themes: Panel<ThemesResult>;
+  emotion: Panel<EmotionResult>; facts: Panel<FactsResult>; limitDown: Panel<LimitDownResult>;
+  sectorDiffusion: Panel<SectorDiffusionResult>; themes: Panel<ThemesResult>;
   firstboard: Panel<FirstBoardResult>; cycle: Panel<CycleResult>; ladder: Panel<BoardLadderResult>;
 }): string {
   const out: string[] = [];
@@ -77,6 +78,18 @@ export function todaySummary(day: string | null, p: {
     out.push(off("跌停深化", r) ?? `跌停深化:当日跌停 ${r.dt_count} 家;5 日均值 ${avg(r.trend_5d)},20 日均值 ${avg(r.trend_20d)};`
       + `天地面 ${r.sky_to_ground_count} 家、高位龙头跌停 ${r.leader_dt_count} 家、换手偏高线索 ${r.pry_open_count} 家;风险 ${risk}`
       + (safeArray(r.history_missing_days).length ? `;历史跌停池有 ${r.history_missing_days.length} 天没取到,缺失日没当 0` : ""));
+  }
+
+  const ms = missing("板块扩散", p.sectorDiffusion);
+  if (ms) out.push(ms);
+  else if (p.sectorDiffusion.state === "done" && p.sectorDiffusion.result) {
+    const r = p.sectorDiffusion.result;
+    const top = safeArray<string>(r.top_diffusing).slice(0, 5).join("、");
+    const fade = safeArray<string>(r.top_fading).slice(0, 5).join("、");
+    const fresh = safeArray<string>(r.new_sectors).slice(0, 5).join("、");
+    out.push(off("板块扩散", r) ?? `板块扩散(行业,不是题材串):今天有涨停 ${r.sector_count} 个行业,扩散中 ${r.diffusing_count}${top ? `(${top})` : ""},`
+      + `退潮中 ${r.fading_count}${fade ? `(${fade})` : ""}${fresh ? `;新出现 ${fresh}` : ""}`
+      + (safeArray(r.missing_days).length ? `;历史涨停池有 ${r.missing_days.length} 天没取到,趋势缺数` : ""));
   }
 
   const m3 = missing("题材事件树", p.themes);
