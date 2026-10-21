@@ -21,6 +21,8 @@ test('v2.1.2 source version is consistent across packages, locks, README badges 
     assert.deepEqual(badges, [VERSION], `${file} 首屏源码版本徽标必须恰好一个且等于 ${VERSION}`);
   }
   const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
-  const firstRelease = /^## \[([^\]]+)\]/m.exec(changelog)?.[1];
+  // 未发布的改动写在 [Unreleased];最上面的**版本**条目仍必须是当前版本
+  const headings = [...changelog.matchAll(/^## \[([^\]]+)\]/gm)].map((m) => m[1]);
+  const firstRelease = headings.find((v) => v !== "Unreleased");
   assert.equal(firstRelease, VERSION, 'CHANGELOG 最上面的版本条目必须是当前版本');
 });
