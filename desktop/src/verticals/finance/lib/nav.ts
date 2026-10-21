@@ -13,7 +13,7 @@
  * 复盘后面接「交易日志」（一个页面，页内再分交易记录 / 风险与纪律 / 复查 / 模式卡）：复完盘对照自己的单子。
  */
 export const NAV_ICONS = [
-  "Home", "Swords", "Activity", "Flame", "Zap", "Gavel", "Radar", "Thermometer", "LayoutGrid", "CandlestickChart",
+  "Home", "Swords", "Activity", "Flame", "Zap", "Gavel", "Radar", "Thermometer", "LayoutGrid", "CandlestickChart", "GitBranch",
   "FlaskConical", "ListFilter", "Star", "Wallet", "CalendarDays", "Bell", "Library", "FileText", "NotebookPen", "Settings", "BookOpenCheck",
   // 各板块（sectors.json 的 icon 字段）
   "Bot", "Cpu", "MemoryStick", "Cable", "CircuitBoard", "Microchip", "BatteryFull", "Plane", "Car", "Pill",
@@ -44,6 +44,7 @@ export const NAV_SECTIONS: NavSection[] = [
   ] },
   { label: "复盘", icon: "Flame", pages: [
     { to: "/shortline", label: "情绪复盘", icon: "Flame" },
+    { to: "/themes", label: "题材演进", icon: "GitBranch" },
     { to: "/daily-review", label: "每日复盘", icon: "Activity" },
   ] },
   { label: "交易日志", icon: "BookOpenCheck", pages: [{ to: "/journal", label: "交易日志", icon: "BookOpenCheck" }] },

@@ -23,6 +23,7 @@ export const router = createBrowserRouter([
       { path: "/watch/intraday", lazy: async () => ({ Component: (await import("@/pages/Watch")).Watch }) },
       { path: "/shortline", lazy: async () => ({ Component: (await import("@/pages/Shortline")).Shortline }) },
       { path: "/shortline/:tab", lazy: async () => ({ Component: (await import("@/pages/Shortline")).Shortline }) },
+      { path: "/themes", lazy: async () => ({ Component: (await import("@/pages/ThemeEvolution")).ThemeEvolution }) },
       { path: "/journal", lazy: async () => ({ Component: (await import("@/pages/Journal")).Journal }) },
       { path: "/journal/:tab", lazy: async () => ({ Component: (await import("@/pages/Journal")).Journal }) },
       { path: "/daily-review", lazy: async () => ({ Component: (await import("@/pages/DailyReview")).DailyReview }) },

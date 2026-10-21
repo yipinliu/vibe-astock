@@ -13,6 +13,8 @@ test("当前页归属：本身和子路径都算它，首页只认 /，认不出
   assert.equal(navPageOf("/intel/news")?.section.label, "产业资讯");
   assert.equal(navPageOf("/briefings")?.page.label, "研报简报");
   assert.equal(navPageOf("/briefings")?.section.label, "产业资讯");
+  assert.equal(navPageOf("/themes")?.page.label, "题材演进");
+  assert.equal(navPageOf("/themes")?.section.label, "复盘");
   assert.equal(navPageOf("/watch")?.page.label, "实时动态");
   assert.equal(navPageOf("/watch/intraday")?.page.label, "竞价与盘中", "盯盘的第二页不算成实时动态的子路径");
   assert.equal(navPageOf("/watch/intraday")?.section.label, "盯盘");
@@ -36,6 +38,7 @@ test("顶栏标题跟着当前页；认不出的显示「工作空间」", () =>
   assert.equal(navTitle("/my-stocks"), "自选与持仓");
   assert.equal(navTitle("/signals/gpu-rent"), "产业信号");
   assert.equal(navTitle("/briefings"), "研报简报");
+  assert.equal(navTitle("/themes"), "题材演进");
   assert.equal(navTitle("/research"), "个股深挖");
   assert.equal(navTitle("/debate"), "多空辩论");
   assert.equal(navTitle("/whatever"), "工作空间");

@@ -27,6 +27,7 @@ import type { RunCompareResult } from "./runCompareView.ts";
 import type { CostMethod, HoldingsView, ImportPreviewRow, MigrationResult, TradeIssue } from "./holdings.ts";
 import type { JournalView } from "./journal.ts";
 import type { BriefingCredentialStatus, BriefingView } from "./briefing.ts";
+import type { ThemeRegistryPayload, ThemeView } from "./themeEvolution.ts";
 import type { VaImportInfo, VaImportPreview, VaImportResult } from "./vaImport.ts";
 import type { ReportSource, ToolReceipt } from "./chatSources.ts";
 import type { UpdateActionName, UpdateInfo } from "./update.ts";
@@ -480,6 +481,38 @@ export const backend = {
   setBriefingGroup: (group_id: string | null) => call<BriefingCredentialStatus>("/settings/briefing-group", {
     method: "POST", body: JSON.stringify({ group_id }),
   }),
+
+  /**
+   * 题材演进:GET 只读本机日快照;构建 / 补历史 / 改层级是 POST,AI 叙事另外带上当前大脑。
+   * 阶段和数字都由后端按规则算,叙事只写解读。
+   */
+  themeEvolution: (opts: { date?: string } = {}, signal?: AbortSignal) => {
+    const qs = opts.date ? `?date=${encodeURIComponent(opts.date)}` : "";
+    return call<ThemeView>(`/view/theme_evolution${qs}`, { signal });
+  },
+  themeEvolutionBuild: (date: string, signal?: AbortSignal) =>
+    call<ThemeView>("/view/theme_evolution", { method: "POST", signal, body: JSON.stringify({ action: "build", date, force: true }) }),
+  themeEvolutionNarrate: async (date: string, signal?: AbortSignal) => {
+    const runtime = requestRuntime();
+    await ensureSelectedLocalAgentReady(runtime.llm, signal);
+    signal?.throwIfAborted();
+    return call<ThemeView>("/view/theme_evolution", {
+      method: "POST", signal,
+      body: JSON.stringify({
+        action: "narrate", date,
+        ai: aiSourceName(String((runtime.llm as { provider?: unknown } | null)?.provider ?? "")),
+        llm: runtime.llm, executionMode: runtime.executionMode,
+      }),
+    });
+  },
+  themeEvolutionBackfill: (opts: { date?: string } = {}, signal?: AbortSignal) =>
+    call<ThemeView>("/view/theme_evolution", {
+      method: "POST", signal, body: JSON.stringify({ action: "backfill", ...opts }),
+    }),
+  themeEvolutionRegistry: (payload: ThemeRegistryPayload, signal?: AbortSignal) =>
+    call<ThemeView>("/view/theme_evolution", {
+      method: "POST", signal, body: JSON.stringify({ action: "registry", ...payload }),
+    }),
 
   /**
    * 交易日志(个人交易数据,不进 AI):主视图一次给全(流水切成的交易、分组、风险与纪律、复查清单、模式卡、设置),

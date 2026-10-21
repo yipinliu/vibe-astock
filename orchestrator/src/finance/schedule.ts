@@ -297,6 +297,18 @@ async function watchChanges(j: JobContext): Promise<JobResult> {
   };
 }
 
+/** 题材演进日快照:收盘后按已取好的盘面 / 简报事实确定性构建;只写本机,不调 AI。 */
+async function themeEvolutionBuild(j: JobContext): Promise<JobResult> {
+  const { buildThemes } = await import("./theme_evolution/build.ts");
+  const built = await buildThemes(j.ctx, j.day, { persist: true, force: true, signal: j.signal });
+  if (!built.available) throw new Error(`题材演进没生成:${built.reason}`);
+  const gaps = built.gaps.slice(0, 3);
+  return {
+    messages: [],
+    note: `题材演进 ${j.day}:${built.themes.length} 个题材${built.partial ? "(部分)" : ""}${gaps.length ? `;缺口:${gaps.join(";")}` : ""}`,
+  };
+}
+
 /** 个人订阅简报同步:交易日按已有令牌 / 组 ID 抓最新一批;没配就跳过,不推送。 */
 async function briefingSync(j: JobContext): Promise<JobResult> {
   const { briefingTokenConfigured, readBriefingGroup } = await import("./briefing/credential.ts");
@@ -348,6 +360,11 @@ export const FINANCE_SCHEDULE: ScheduleDef = {
       description: "台账里的裁决点 / 证伪条件到了日子,列出写下以来的公司公告标题(A 股),提醒回来标记兑现与否。周末到期的下一个交易日提醒。",
       // 箭头包一层:verdicts.ts 反过来引用本文件,直接写函数名在加载顺序颠倒时会读到未初始化的绑定
       run: (j) => verdictDue(j),
+    },
+    {
+      id: "theme_evolution_build", label: "题材演进日快照", at: "16:35", defaultEnabled: true,
+      description: "A 股收盘后按当天的题材树、轮动、行业资金流和本机简报分析做一次确定性构建:归并题材层级、按规则判阶段、写本机日快照。不调用 AI、不推送消息。",
+      run: themeEvolutionBuild,
     },
     {
       id: "briefing_sync_am", label: "简报同步(早间)", at: "09:10", defaultEnabled: true,

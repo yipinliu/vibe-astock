@@ -9,6 +9,7 @@ export const HOME_FEATURE_GROUPS = [
   ] },
   { title: "复盘", detail: "收盘后回头看今天", features: [
     { to: "/shortline", title: "情绪复盘", detail: "赚钱效应、晋级率、亏钱效应与题材延续" },
+    { to: "/themes", title: "题材演进", detail: "近 7 天题材阶段与层级归并,AI 只写解读" },
     { to: "/daily-review", title: "每日复盘", detail: "盘面表现、资金、连板与涨停分档" },
   ] },
   { title: "交易日志", detail: "自己的单子对上当时的情绪", features: [
