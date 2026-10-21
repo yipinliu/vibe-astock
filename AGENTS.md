@@ -110,7 +110,7 @@ scripts/start --remote --no-open --public-url https://<平台给页面端口(默
 ```bash
 cd orchestrator && npm test && npm run typecheck
 cd ../desktop && npm test && npm run build
-cd .. && python -m pytest calc/tests backtest/tests .agents/skills/data-access/scripts/tests -q && python -m mypy
+cd .. && python -m pytest calc/tests backtest/tests briefing/tests .agents/skills/data-access/scripts/tests -q && python -m mypy
 ```
 
 Python 用安装时建的虚拟环境；mypy 的安装与约定见 [`docs/development-validation.md`](docs/development-validation.md)。

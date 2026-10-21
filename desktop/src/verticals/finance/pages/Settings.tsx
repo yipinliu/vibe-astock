@@ -12,6 +12,7 @@ import { testAndSaveAi } from "@/lib/aiConnection";
 import { useAiRuntime } from "@/hooks/useAiRuntime";
 import { UpdateSettingsCard } from "@/components/UpdateSettingsCard";
 import { SecContactCard } from "@/components/SecContactCard";
+import { BriefingCredentialCard } from "@/components/BriefingCredentialCard";
 import { VaImportCard } from "@/components/VaImportCard";
 import { API_PORT } from "@/lib/brand";
 
@@ -634,6 +635,7 @@ export function Settings() {
         </details>
       )}
 
+      <div className="mb-4"><BriefingCredentialCard /></div>
       <div className="mb-4"><SecContactCard /></div>
       <div className="mb-4"><UpdateSettingsCard /></div>
       <div className="mb-4"><VaImportCard /></div>

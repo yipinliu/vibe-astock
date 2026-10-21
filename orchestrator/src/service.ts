@@ -1710,7 +1710,10 @@ export function assistantTools(ctx: ServiceContext, llm?: LlmOverride, proposals
     tool("read_ledger", "用户询问自己的台账时，读取本产品台账。不要用于无关问候或公开网页搜索。withheld 列出的种类按产品设置不提供给你，不等于没有记录；用户问到时说明请在页面查看。", empty, () => assistantLedgerSnapshot(ctx),
       () => ({ label: "你的台账" })),
     tool("list_tools", "发现本产品计算和分析工具。calc 先以 {catalog:true} 查询；backtest 先以 {action:'catalog'} 查询。", empty, () => listTools()),
-    tool("run_tool", "执行产品工具，先查目录确认参数。calc 的 input 为 {fn:函数名,args:参数对象}，不是 function/inputs/name。输出中的 ok/error/status 是业务结果，必须如实检查。", z.object({ name: id, input: z.record(z.string(), z.unknown()) }).strict(), (a, signal) => runTool(ctx, a.name, a.input, signal),
+    tool("run_tool", "执行产品工具，先查目录确认参数。calc 的 input 为 {fn:函数名,args:参数对象}，不是 function/inputs/name。输出中的 ok/error/status 是业务结果，必须如实检查。", z.object({ name: id, input: z.record(z.string(), z.unknown()) }).strict(), (a, signal) => {
+      if (currentPlugin().tools?.[a.name]?.agentHidden) throw new ServiceError("hidden_tool", "这个工具只由页面在服务端调用，不对对话开放");
+      return runTool(ctx, a.name, a.input, signal);
+    },
       (a) => ({ label: "计算工具", target: [a.name, typeof a.input.fn === "string" ? a.input.fn : typeof a.input.action === "string" ? a.input.action : ""].filter(Boolean).join(" · ") })),
     tool("start_research", "准备完整研究任务（会使用所选模型额度）。界面会请求用户确认，确认前没有启动，不能声称已运行。不覆盖已有任务，来源固定为当前用户选择。", z.object({ symbol: id, market: id.optional(), company_name: z.string().max(80).optional(), endpoints: z.enum(["full", "core"]).default("core") }).strict(),
       (a) => {
@@ -2090,6 +2093,7 @@ export async function runToolRequest(
     ? currentPlugin().tools?.[name]
     : undefined;
   if (!spec) throw new ServiceError("not_found", `没有这个工具:${name}`);
+  if (spec.agentHidden) throw new ServiceError("hidden_tool", "这个工具只由页面在服务端调用，不对原始工具入口开放");
   if (spec.requiresAgent !== false) {
     if (mode === "direct") {
       throw new ServiceError("agent_required", "这个工具要用 AI：请先接入 AI；接口调用时 executionMode 要用 agent");
@@ -2101,7 +2105,9 @@ export async function runToolRequest(
 
 /** 界面要用的工具清单(名字 + 显示名),由垂类下发 —— 前端不写死一份 */
 export function listTools(): { name: string; label: string }[] {
-  return Object.entries(currentPlugin().tools ?? {}).map(([name, t]) => ({ name, label: t.label }));
+  return Object.entries(currentPlugin().tools ?? {})
+    .filter(([, t]) => !t.agentHidden)
+    .map(([name, t]) => ({ name, label: t.label }));
 }
 
 /** 对话引导 → 参数齐备 → 跑垂类工具 → 生成报告。Core 不认识具体工具参数。 */

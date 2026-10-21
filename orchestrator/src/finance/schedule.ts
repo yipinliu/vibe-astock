@@ -297,6 +297,23 @@ async function watchChanges(j: JobContext): Promise<JobResult> {
   };
 }
 
+/** 个人订阅简报同步:交易日按已有令牌 / 组 ID 抓最新一批;没配就跳过,不推送。 */
+async function briefingSync(j: JobContext): Promise<JobResult> {
+  const { briefingTokenConfigured, readBriefingGroup } = await import("./briefing/credential.ts");
+  const group = readBriefingGroup(j.ctx.dataRoot);
+  if (!briefingTokenConfigured(j.ctx.dataRoot) || !group) {
+    return { messages: [], note: "未设置简报访问令牌 / 订阅组 ID,跳过" };
+  }
+  const { syncBriefings } = await import("./briefing/archive.ts");
+  try {
+    const r = await syncBriefings(j.ctx, group, j.signal);
+    return { messages: [], note: `简报同步:${r.fetched} 条` };
+  } catch (e) {
+    if (j.signal.aborted) throw e;
+    return { messages: [], note: `简报同步没成功:${e instanceof Error ? e.message.slice(0, 80) : "原因不明"}` };
+  }
+}
+
 export const FINANCE_SCHEDULE: ScheduleDef = {
   timeZone: SCHEDULE_TZ,
   gateNote: "按北京时间,只在 A 股交易日运行(周末、节假日不跑);交易日历取不到时当天不运行,并在收件箱说明。",
@@ -331,6 +348,16 @@ export const FINANCE_SCHEDULE: ScheduleDef = {
       description: "台账里的裁决点 / 证伪条件到了日子,列出写下以来的公司公告标题(A 股),提醒回来标记兑现与否。周末到期的下一个交易日提醒。",
       // 箭头包一层:verdicts.ts 反过来引用本文件,直接写函数名在加载顺序颠倒时会读到未初始化的绑定
       run: (j) => verdictDue(j),
+    },
+    {
+      id: "briefing_sync_am", label: "简报同步(早间)", at: "09:10", defaultEnabled: true,
+      description: "交易日按个人订阅源抓最新一批简报,只保存在本机;没设访问令牌 / 订阅组 ID 时跳过。不推送消息。",
+      run: briefingSync,
+    },
+    {
+      id: "briefing_sync_pm", label: "简报同步(晚间)", at: "20:10", defaultEnabled: true,
+      description: "交易日按个人订阅源抓最新一批简报,只保存在本机;没设访问令牌 / 订阅组 ID 时跳过。不推送消息。",
+      run: briefingSync,
     },
   ],
 };

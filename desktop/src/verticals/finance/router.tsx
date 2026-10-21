@@ -30,6 +30,7 @@ export const router = createBrowserRouter([
       { path: "/intel/:tab", lazy: async () => ({ Component: (await import("@/pages/Intel")).Intel }) },
       { path: "/signals", lazy: async () => ({ Component: (await import("@/pages/Signals")).Signals }) },
       { path: "/signals/:tab", lazy: async () => ({ Component: (await import("@/pages/Signals")).Signals }) },
+      { path: "/briefings", lazy: async () => ({ Component: (await import("@/pages/Briefing")).Briefing }) },
       { path: "/sectors", lazy: async () => ({ Component: (await import("@/pages/Sectors")).Sectors }) },
       { path: "/sectors/:key", lazy: async () => ({ Component: (await import("@/pages/SectorDetail")).SectorDetail }) },
       { path: "/candidates", lazy: async () => ({ Component: (await import("@/pages/Candidates")).Candidates }) },

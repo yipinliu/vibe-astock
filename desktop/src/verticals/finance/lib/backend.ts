@@ -26,6 +26,7 @@ import type { AuditReport, HeadCheck } from "./auditView.ts";
 import type { RunCompareResult } from "./runCompareView.ts";
 import type { CostMethod, HoldingsView, ImportPreviewRow, MigrationResult, TradeIssue } from "./holdings.ts";
 import type { JournalView } from "./journal.ts";
+import type { BriefingCredentialStatus, BriefingView } from "./briefing.ts";
 import type { VaImportInfo, VaImportPreview, VaImportResult } from "./vaImport.ts";
 import type { ReportSource, ToolReceipt } from "./chatSources.ts";
 import type { UpdateActionName, UpdateInfo } from "./update.ts";
@@ -443,6 +444,42 @@ export const backend = {
   /** 在时点窗口里手动存一张快照(窗口外后端会说哪几个时间能存) */
   shortlineIntradayCapture: <T>() =>
     call<T>("/view/shortline_intraday", { method: "POST", body: JSON.stringify({ action: "capture" }) }),
+
+  /**
+   * 研报简报(个人订阅,只在本机):
+   * - 读归档 / 分析都走 GET;同步和生成分析是 POST。
+   * - 令牌 / 组 ID 只由设置页保存的服务端凭据提供,这个页面拿不到原文。
+   */
+  briefing: (opts: { date?: string; scope?: "day" | "recent7" } = {}, signal?: AbortSignal) => {
+    const q = new URLSearchParams();
+    if (opts.date) q.set("date", opts.date);
+    if (opts.scope) q.set("scope", opts.scope);
+    const qs = q.toString();
+    return call<BriefingView>(`/view/briefing${qs ? `?${qs}` : ""}`, { signal });
+  },
+  briefingSync: (opts: { date?: string; scope?: "day" | "recent7"; group_id?: string } = {}) =>
+    call<BriefingView>("/view/briefing", { method: "POST", body: JSON.stringify({ action: "sync", ...opts }) }),
+  briefingAnalyze: async (opts: { date: string; scope: "day" | "recent7" }, signal?: AbortSignal) => {
+    const runtime = requestRuntime();
+    await ensureSelectedLocalAgentReady(runtime.llm, signal);
+    signal?.throwIfAborted();
+    return call<BriefingView>("/view/briefing", {
+      method: "POST", signal,
+      body: JSON.stringify({
+        action: "analyze", ...opts,
+        ai: aiSourceName(String((runtime.llm as { provider?: unknown } | null)?.provider ?? "")),
+        llm: runtime.llm, executionMode: runtime.executionMode,
+      }),
+    });
+  },
+  briefingToken: () => call<BriefingCredentialStatus>("/settings/briefing-token"),
+  setBriefingToken: (token: string | null) => call<BriefingCredentialStatus>("/settings/briefing-token", {
+    method: "POST", body: JSON.stringify({ token }),
+  }),
+  briefingGroup: () => call<BriefingCredentialStatus>("/settings/briefing-group"),
+  setBriefingGroup: (group_id: string | null) => call<BriefingCredentialStatus>("/settings/briefing-group", {
+    method: "POST", body: JSON.stringify({ group_id }),
+  }),
 
   /**
    * 交易日志(个人交易数据,不进 AI):主视图一次给全(流水切成的交易、分组、风险与纪律、复查清单、模式卡、设置),

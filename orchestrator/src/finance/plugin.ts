@@ -18,6 +18,7 @@ import { financeBaselinePeriod } from "./fiscal_year.ts";
 import { FINANCE_ROLES, FINANCE_ROLE_SOURCE_FNS, FINANCE_SLOTS, GLOBAL_CONTRACT } from "./semantic_slots.ts";
 import { FINANCE_STAGE_VALIDATORS } from "./stage_validators.ts";
 import { SEC_CONTACT_CREDENTIAL } from "./sec_contact.ts";
+import { BRIEFING_GROUP_CREDENTIAL, BRIEFING_TOKEN_CREDENTIAL } from "./briefing/credential.ts";
 import { reportBareCodes, reportSymbolAliases, reportSymbols } from "./report_symbols.ts";
 import { CHOKE_FILE_REL, loadChokeTable, scanChokepoints, writeChokeFile } from "./chokepoint.ts";
 import { buildGateRewritePrompt, buildStagePrompt } from "./stages.ts";
@@ -216,8 +217,8 @@ export const FINANCE_PLUGIN: Plugin = {
     { file: "global_quote_ref.json", field: "security_name" },
     { file: "em_global_profile.json", field: "company_short_name" },
   ],
-  // 设置页选填的 SEC 联系方式(EDGAR 要求请求头里写访问者的英文姓名和邮箱)
-  savedCredentials: [SEC_CONTACT_CREDENTIAL],
+  // 设置页选填的 SEC 联系方式(EDGAR 要求请求头里写访问者的英文姓名和邮箱)、个人订阅简报的令牌 / 组 ID
+  savedCredentials: [SEC_CONTACT_CREDENTIAL, BRIEFING_TOKEN_CREDENTIAL, BRIEFING_GROUP_CREDENTIAL],
   doctorChecks: ({ dataRoot }) => {
     const rows = thermoLedgerOverview({ dataRoot });
     const bad = rows.filter((r) => r.unreadable || r.dropped > 0);
@@ -359,6 +360,14 @@ export const FINANCE_PLUGIN: Plugin = {
     kline: { label: "K 线", module: "backtest.kline", requiresAgent: false, timeoutMs: 90_000 },
     // 悬浮卡：一次返回最近一个交易日的分钟线和最近 60 根日线；只读公开行情、不用模型
     hover_kline: { label: "悬浮 K 线", module: "backtest.hover_kline", requiresAgent: false, timeoutMs: 30_000 },
+    // 简报个股页的批量技术读数:均线 / 近 5、20 日涨跌 / 距 60 日高低点 / 量比。纯计算,只读公开行情。
+    stock_tech: { label: "技术读数", module: "backtest.stock_tech", requiresAgent: false, timeoutMs: 90_000 },
+    // 个人订阅简报:只由简报视图在服务端调用。令牌经 authEnv 注入;agentHidden 让它不出现在
+    // list_tools / 对话 run_tool / 原始工具入口,避免私人订阅内容被普通对话顺手拉进模型。
+    briefing_crawl: {
+      label: "简报抓取", module: "briefing.crawl", requiresAgent: false, timeoutMs: 60_000,
+      authEnv: ["VRA_BRIEFING_TOKEN"], agentHidden: true,
+    },
     // 持仓体检：输入是页面传来的代码和市值，只读公开行情和申万分类、不落盘、不用模型 ⇒ 没接 AI 也能用。
     xray: { label: "持仓体检", module: "backtest.portfolio_xray", requiresAgent: false, timeoutMs: 180_000 },
     // 历史情景回放：输入和持仓体检一样是代码和市值；A 股要逐只取 2015 年以来的日线（baostock 不能同时开多个会话），持仓多时要一两分钟

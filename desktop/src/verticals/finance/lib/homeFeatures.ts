@@ -17,6 +17,7 @@ export const HOME_FEATURE_GROUPS = [
   { title: "产业资讯", detail: "产业正在发生什么", features: [
     { to: "/intel", title: "资讯雷达", detail: "聚合新闻、公告与事件线索" },
     { to: "/signals", title: "产业信号", detail: "跟踪上下游的变化线索" },
+    { to: "/briefings", title: "研报简报", detail: "个人订阅的机构简报与 AI 摘要" },
   ] },
   { title: "产业研究", detail: "按板块拆产业链", features: [
     { to: "/sectors", title: "产业研究", detail: "各个板块，配好让 AI 一步步梳理的提示词" },

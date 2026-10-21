@@ -348,6 +348,11 @@ export interface Plugin {
      * 放进 `result.ui_only`,Core 交给 Agent 前会去掉这一块。MCP / 原始入口不附加。
      */
     readonly uiArgs?: Readonly<Record<string, string | number | boolean>>;
+    /**
+     * 只允许垂类视图在服务端调用:不对 Agent / MCP / 原始工具入口暴露。
+     * 用于会读用户私人订阅内容的工具(如简报抓取),避免它被普通对话顺手拉进模型上下文。
+     */
+    readonly agentHidden?: boolean;
   }>>;
   /**
    * **界面查询契约**(BFF):页面按**名字**要一屏数据,而不是自己去点名物理端点。
@@ -689,6 +694,7 @@ const TOOLS = {
       requiresAgent: { type: "boolean" },
       timeoutMs: { type: "integer", minimum: 1000, maximum: 1800000 },
       authEnv: { type: "array", maxItems: 4, uniqueItems: true, items: { type: "string", pattern: "^[A-Z][A-Z0-9_]{0,63}$" } },
+      agentHidden: { type: "boolean" },
       uiArgs: {
         type: "object", maxProperties: 8, propertyNames: { type: "string", pattern: "^[a-z][a-z0-9_]{0,31}$" },
         additionalProperties: { type: ["string", "number", "boolean"] },
@@ -1027,7 +1033,7 @@ interface Decl {
   alertObservationFields: string[];
   selfTestCalc: { fn: string; args: Record<string, unknown>; expect: number } | null;
   ledger?: { kinds: Record<string, { label: string; properties: Record<string, unknown>; required: string[] }> };
-  tools?: Record<string, { label: string; module: string; requiresAgent?: boolean; timeoutMs?: number; authEnv?: readonly string[]; uiArgs?: Record<string, string | number | boolean> }>;
+  tools?: Record<string, { label: string; module: string; requiresAgent?: boolean; timeoutMs?: number; authEnv?: readonly string[]; uiArgs?: Record<string, string | number | boolean>; agentHidden?: boolean }>;
   pageQueries?: Plugin["pageQueries"];
   pageContext?: Plugin["pageContext"];
   debate?: Plugin["debate"];

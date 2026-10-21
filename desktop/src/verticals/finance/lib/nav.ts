@@ -50,6 +50,7 @@ export const NAV_SECTIONS: NavSection[] = [
   { label: "产业资讯", icon: "Radar", pages: [
     { to: "/intel", label: "资讯雷达", icon: "Radar" },
     { to: "/signals", label: "产业信号", icon: "Thermometer" },
+    { to: "/briefings", label: "研报简报", icon: "FileText" },
   ] },
   { label: "产业研究", icon: "LayoutGrid", overview: { to: "/sectors", label: "产业研究", icon: "LayoutGrid" }, listsSectors: true, pages: [] },
   { label: "研究工具", icon: "FlaskConical", pages: [
