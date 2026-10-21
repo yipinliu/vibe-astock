@@ -357,6 +357,8 @@ export const FINANCE_PLUGIN: Plugin = {
     // 个股页的 K 线：只经取数层读公开行情、不写用户数据、不用模型 ⇒ 没接 AI 也能看。
     // 界面传 charts:true 拿整段序列（放 result.ui_only）；Agent 不传，只拿最新值和区间高低。
     kline: { label: "K 线", module: "backtest.kline", requiresAgent: false, timeoutMs: 90_000 },
+    // 悬浮卡：一次返回最近一个交易日的分钟线和最近 60 根日线；只读公开行情、不用模型
+    hover_kline: { label: "悬浮 K 线", module: "backtest.hover_kline", requiresAgent: false, timeoutMs: 30_000 },
     // 持仓体检：输入是页面传来的代码和市值，只读公开行情和申万分类、不落盘、不用模型 ⇒ 没接 AI 也能用。
     xray: { label: "持仓体检", module: "backtest.portfolio_xray", requiresAgent: false, timeoutMs: 180_000 },
     // 历史情景回放：输入和持仓体检一样是代码和市值；A 股要逐只取 2015 年以来的日线（baostock 不能同时开多个会话），持仓多时要一两分钟

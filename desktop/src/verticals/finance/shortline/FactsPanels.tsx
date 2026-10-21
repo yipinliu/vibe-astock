@@ -7,6 +7,7 @@
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, Layers3, ListTree, Lock, Network, Rows3, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StockKlineHover } from "@/components/StockKlineHover";
 import { Caliber } from "./Caliber";
 import { countColor, coverageNote, finite, hhmm, pctColor, plain, rate, ratioOf, safeArray, safeRecord, signed, strengthColor, tierOrder } from "./format";
 import type { BoardStat, ByBoard, EventLedger, FeedbackCell, FeedbackDetail, FeedbackMatrix, LedgerEvent, LossEffect, SealQuality, ThemeNode, ThemeRow, ThemeStructure, ThemeTree } from "./types";
@@ -89,7 +90,7 @@ export function Matrix({ fm }: { fm?: FeedbackMatrix }) {
               <tbody>
                 {details.map((d) => (
                   <tr key={d.code} className="border-b border-border/30 last:border-0">
-                    <td className="py-1 pr-2 font-semibold">{d.name}</td>
+                    <td className="py-1 pr-2 font-semibold"><StockKlineHover symbol={d.code} name={d.name}>{d.name}</StockKlineHover></td>
                     <td className="pr-2 text-muted-foreground">{d.code}</td>
                     <td className="pr-2 text-muted-foreground">{d.prev_tier}</td>
                     <td className={cn("pr-2 font-bold", pctColor(d.ret))}>{signed(d.ret)}</td>
@@ -353,7 +354,7 @@ export function Ledger({ el }: { el?: EventLedger }) {
   const Row = ({ e }: { e: LedgerEvent }) => (
     <div className="flex items-center gap-2 border-b border-border/40 py-1 text-[12px] last:border-0">
       <span className={cn("shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold", TAG_TONE[e.tag] || "bg-muted text-muted-foreground")}>{e.tag}</span>
-      <span className="font-semibold">{e.name}</span>
+      <StockKlineHover symbol={e.code} name={e.name} className="font-semibold">{e.name}</StockKlineHover>
       <span className="shrink-0 text-[10px] text-muted-foreground">{e.code}</span>
       {e.boards > 0 && <span className="shrink-0 text-[11px] text-primary">{e.boards}板</span>}
       <span className={cn("shrink-0 tabular-nums", pctColor(e.ret))}>{signed(e.ret)}</span>

@@ -6,6 +6,7 @@
 import { AlertCircle, Flame, Sparkles } from "lucide-react";
 import { useAiDraft } from "../../../core/ai/pageContext";
 import { cn } from "@/lib/utils";
+import { StockKlineHover } from "@/components/StockKlineHover";
 import { Caliber } from "./Caliber";
 import { finite, hhmm, pctColor, safeArray, signed, yi } from "./format";
 import type { FirstBoardResult, FirstBoardStock } from "./types";
@@ -66,7 +67,7 @@ export function FirstBoardPanel({ fb }: { fb: FirstBoardResult }) {
               {stocks.map((s) => (
                 <tr key={s.code} className="border-b border-border/30">
                   <td className="whitespace-nowrap px-2 py-1.5">
-                    <span className="font-medium">{s.name}</span> <span className="text-[10px] text-muted-foreground">{s.code}</span>
+                    <StockKlineHover symbol={s.code} name={s.name} className="font-medium">{s.name}</StockKlineHover> <span className="text-[10px] text-muted-foreground">{s.code}</span>
                     {s.rebound && <span className="ml-1 rounded bg-warning/15 px-1 text-[10px] font-bold text-warning">反包</span>}
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5 font-mono text-muted-foreground">{hhmm(s.first_seal)}</td>
